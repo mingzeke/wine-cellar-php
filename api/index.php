@@ -1,5 +1,13 @@
 <?php
 
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST, DELETE, PUT, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Accept, Origin");
+
+if (strtolower($_SERVER['REQUEST_METHOD']) == 'options') {
+	exit();
+}
+
 require 'Slim/Slim.php';
 
 $app = new Slim();
@@ -42,10 +50,9 @@ function getWine($id) {
 }
 
 function addWine() {
-	error_log('addWine\n', 3, '/var/tmp/php.log');
 	$request = Slim::getInstance()->request();
 	$wine = json_decode($request->getBody());
-	$sql = "INSERT INTO wine (name, grapes, country, region, year, description) VALUES (:name, :grapes, :country, :region, :year, :description)";
+	$sql = "INSERT INTO wine (name, grapes, country, region, year, description, picture) VALUES (:name, :grapes, :country, :region, :year, :description, :picture)";
 	try {
 		$db = getConnection();
 		$stmt = $db->prepare($sql);  
@@ -55,12 +62,12 @@ function addWine() {
 		$stmt->bindParam("region", $wine->region);
 		$stmt->bindParam("year", $wine->year);
 		$stmt->bindParam("description", $wine->description);
+		$stmt->bindParam("picture", $wine->picture);
 		$stmt->execute();
 		$wine->id = $db->lastInsertId();
 		$db = null;
 		echo json_encode($wine); 
 	} catch(PDOException $e) {
-		error_log($e->getMessage(), 3, '/var/tmp/php.log');
 		echo '{"error":{"text":'. $e->getMessage() .'}}'; 
 	}
 }
@@ -69,7 +76,7 @@ function updateWine($id) {
 	$request = Slim::getInstance()->request();
 	$body = $request->getBody();
 	$wine = json_decode($body);
-	$sql = "UPDATE wine SET name=:name, grapes=:grapes, country=:country, region=:region, year=:year, description=:description WHERE id=:id";
+	$sql = "UPDATE wine SET name=:name, grapes=:grapes, country=:country, region=:region, year=:year, description=:description, picture=:picture WHERE id=:id";
 	try {
 		$db = getConnection();
 		$stmt = $db->prepare($sql);  
@@ -79,6 +86,7 @@ function updateWine($id) {
 		$stmt->bindParam("region", $wine->region);
 		$stmt->bindParam("year", $wine->year);
 		$stmt->bindParam("description", $wine->description);
+		$stmt->bindParam("picture", $wine->picture);
 		$stmt->bindParam("id", $id);
 		$stmt->execute();
 		$db = null;
